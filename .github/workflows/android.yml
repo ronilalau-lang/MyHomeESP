@@ -15,7 +15,7 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
-          printf '%s' "$GOOGLE_SERVICES_JSON" > google-services.json
+         echo "$GOOGLE_SERVICES_JSON" | base64 -d > google-services.json
 
       - name: Configurar Node
         uses: actions/setup-node@v4
