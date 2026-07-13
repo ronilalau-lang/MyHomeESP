@@ -11,6 +11,9 @@ jobs:
     - name: Baixar projeto
       uses: actions/checkout@v4
 
+- name: Criar google-services.json
+  run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > google-services.json
+
     - name: Configurar Node
       uses: actions/setup-node@v4
       with:
