@@ -1,36 +1,40 @@
-// index.js
-const admin = require("firebase-admin");
-const path = require("path");
+document.addEventListener("deviceready", function () {
 
-// Caminho para o JSON do Firebase Admin
-const serviceAccount = require(path.join(__dirname, "SEU_JSON_AQUI.json"));
+    console.log("MyHomeESP iniciado");
 
-// Inicializa Firebase Admin
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+    FirebasePlugin.requestPermission(function(hasPermission) {
+
+        if (hasPermission) {
+            console.log("Permissão de notificação OK");
+
+            FirebasePlugin.getToken(function(token) {
+                console.log("TOKEN FCM:");
+                console.log(token);
+
+                // Depois vamos usar esse token no servidor
+                localStorage.setItem("fcm_token", token);
+
+            }, function(error) {
+                console.error("Erro ao pegar token:", error);
+            });
+
+        } else {
+            console.log("Permissão negada");
+        }
+
+    });
+
+
+    FirebasePlugin.onMessageReceived(function(message) {
+
+        console.log("Mensagem recebida:", message);
+
+        if (message.tap) {
+            console.log("Usuário abriu a notificação");
+        }
+
+    }, function(error) {
+        console.error("Erro FCM:", error);
+    });
+
 });
-
-// Token do dispositivo (gerado pelo FCM Web ou App)
-const DEVICE_TOKEN = "COLE_AQUI_SEU_TOKEN";
-
-// Mensagem que será enviada
-const message = {
-  notification: {
-    title: "ESP32",
-    body: "Notificação enviada com sucesso!"
-  },
-  token: DEVICE_TOKEN
-};
-
-// Função para enviar notificação
-async function enviarNotificacao() {
-  try {
-    const response = await admin.messaging().send(message);
-    console.log("✅ Notificação enviada:", response);
-  } catch (error) {
-    console.error("❌ Erro ao enviar notificação:", error);
-  }
-}
-
-// Executa
-enviarNotificacao();

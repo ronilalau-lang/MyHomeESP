@@ -408,7 +408,11 @@ db.ref("config/alarme").on("value", snap=>{
 alarmeSwitch.onchange = ()=>{
     db.ref("config/alarme").set(alarmeSwitch.checked ? 1 : 0);
 };
+
 </script>
+
+<script src="cordova.js"></script>
+<script src="index.js"></script>
 
 </body>
 </html>

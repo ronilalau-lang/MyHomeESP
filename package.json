@@ -15,9 +15,13 @@
   "cordova": {
     "platforms": [
       "android"
-    ]
+    ],
+    "plugins": {
+      "cordova-plugin-firebasex": {}
+    }
   },
   "devDependencies": {
-    "cordova-android": "^15.0.0"
+    "cordova-android": "^15.0.0",
+    "cordova-plugin-firebasex": "^20.0.2"
   }
 }
