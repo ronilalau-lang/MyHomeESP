@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard ESP32</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    background: url('sala.jpg') no-repeat center center;
+    background-size: cover;
+    overflow-x: hidden;
+}
+
+h1 {
+    text-align: center;
+    margin: 40px 0 20px;
+    font-size: 48px;
+    color: #666;
+    text-shadow: 1px 1px 6px rgba(0,0,0,0.6);
+}
+
+#dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    padding: 24px;
+}
+
+.card {
+    background: rgba(255,255,255,0.75);
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 6px 6px 20px rgba(0,0,0,0.35);
+    position: relative;
+    cursor: pointer;
+
+    /* ===== remove sele莽茫o azul ===== */
+    user-select: none;                  /* n茫o seleciona texto */
+    -webkit-tap-highlight-color: transparent; /* no mobile */
+    min-height: 280px;   /* fixa altura m铆nima */
+    max-height: 280px;   /* fixa altura m谩xima igual para todos os cards */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* mant茅m bot玫es embaixo */
+    overflow: hidden; /* evita que qualquer conteudo vaze do card */
+}
+
+.card:focus,
+.card:active {
+    outline: none;
+    box-shadow: 6px 6px 20px rgba(0,0,0,0.35);
+    background: rgba(255,255,255,0.75);
+}
+
+.card h2 {
+    text-align: center;
+    margin-top: 2px;
+    margin-bottom: 8px;
+    font-size: 28px;
+}
+
+.lampada {
+    position: absolute;
+    top: 40px;
+    right: 340px;
+    width: 70px;
+}
+
+.status {
+    font-size: 30px;
+    margin: 6px 0;
+}
+
+.verde { color: #2e7d32; font-weight: bold; }
+.vermelho { color: #c62828; font-weight: bold; }
+
+.ultima {
+    font-size: 24px;
+    margin-top: 8px;
+    text-align: center;
+    color: #000000;
+}
+
+.botoes {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+button {
+    flex: 1;
+    padding: 12px;
+    font-size: 32px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.ligar { background: #2e7d32; color: white; }
+.desligar { background: #c62828; color: white; }
+
+.menu-btn {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    font-size: 34px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+    z-index: 3000;
+}
+
+.menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 450px;
+    height: 100%;
+    background: rgba(0,0,0,0.95); /* menu preto */
+    box-shadow: 4px 0 15px rgba(0,0,0,.3);
+    padding: 40px 20px;
+    transform: translateX(-100%);
+    transition: .3s;
+    z-index: 2500;
+    color: white;
+}
+
+.menu h2 {
+    font-size: 50px;
+    text-align: center;
+    margin-bottom: 40px;
+    color: white;
+}
+
+.menu.open {
+    transform: translateX(0);
+}
+
+.menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 40px;
+    margin-top: 30px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    color: white;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: #c62828;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #2e7d32;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* ===== BOTAO REMOVER NO CANTO DIREITO ===== */
+.remover-card {
+    position: absolute;
+    top: 15px;
+    right: 15px; /* agora no canto direito */
+    background: #c62828;
+    color: white;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    font-size: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 15;
+}
+
+.remover-card:hover {
+    background: #a61f1f;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🏠 Dashboard de Ambientes</h1>
+
+<div class="menu-btn" onclick="toggleMenu()">☰</div>
+
+<div class="menu" id="menu">
+    <h2>⚙ Configurações</h2>
+
+    <div class="menu-item">
+        <span>🚨 Ativar Alarme</span>
+        <label class="switch">
+            <input type="checkbox" id="alarmeSwitch">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="menu-item" onclick="adicionarComodo()">
+        <span>➕ Adicionar cômodo</span>
+    </div>
+
+    <div class="menu-item" onclick="apagarTodasLuzes()">
+        <span>💡 Apagar todas as luzes</span>
+    </div>
+</div>
+
+<div id="dashboard"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCecItsQhqKLmeLAqcWTCjNc2krXozcZOQ",
+  authDomain: "esp32-painel.firebaseapp.com",
+  databaseURL: "https://esp32-painel-default-rtdb.firebaseio.com",
+  projectId: "esp32-painel"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const dashboard = document.getElementById("dashboard");
+
+// ---------------- CARDS ----------------
+function criarCard(comodo, key){
+    if(document.getElementById(`card-${comodo}`)) return;
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.id = `card-${comodo}`;
+
+    card.onclick = () => {
+        window.location.href = `comodo.html?nome=${comodo}`;
+    };
+
+    card.innerHTML = `
+        <div class="remover-card" onclick="event.stopPropagation(); removerComodo('${comodo}','${key}')">✖</div>
+
+        <img src="./lamp_off.png" id="lamp-${comodo}" class="lampada">
+        <h2>${comodo.toUpperCase()}</h2>
+
+        <div class="status">💡 Lâmpada: <span id="led-${comodo}">--</span></div>
+        <div class="status">🌤 Ambiente: <span id="amb-${comodo}">--</span></div>
+        <div class="ultima" id="ult-${comodo}">Última mudança: --</div>
+
+        <div class="botoes">
+            <button class="ligar" onclick="event.stopPropagation(); setLed('${comodo}',1)">Ligar</button>
+            <button class="desligar" onclick="event.stopPropagation(); setLed('${comodo}',0)">Desligar</button>
+        </div>
+    `;
+
+    dashboard.appendChild(card);
+    escutarComodo(comodo);
+    escutarUltimoHistorico(comodo);
+}
+
+db.ref("config/comodos").on("child_added", snap=>{
+    criarCard(snap.val(), snap.key);
+});
+
+// ---------------- REMOVER ----------------
+function removerComodo(comodo, key){
+    if(!confirm(`Remover o cômodo "${comodo}"?`)) return;
+
+    db.ref(`config/comodos/${key}`).remove();
+    db.ref(`ambientes/${comodo}`).remove();
+
+    const card = document.getElementById(`card-${comodo}`);
+    if(card) card.remove();
+}
+
+// ---------------- MENU ----------------
+function adicionarComodo(){
+    let nome = prompt("Nome do novo cômodo:");
+    if(!nome) return;
+
+    nome = nome.toLowerCase().replace(/\s+/g,'');
+
+    db.ref("config/comodos").push(nome);
+    db.ref(`ambientes/${nome}`).set({ led:0, ambiente:0 });
+    toggleMenu();
+}
+
+function apagarTodasLuzes(){
+    if(!confirm("Deseja apagar todas?")) return;
+
+    db.ref("config/comodos").once("value", snap=>{
+        snap.forEach(c=>{
+            db.ref(`ambientes/${c.val()}/led`).set(0);
+        });
+    });
+
+    toggleMenu();
+}
+
+function toggleMenu(){
+    const menu = document.getElementById("menu");
+    menu.classList.toggle("open");
+}
+
+// Fecha o menu ao clicar fora
+document.addEventListener('click', function(e){
+    const menu = document.getElementById("menu");
+    const btn = document.querySelector(".menu-btn");
+    if(menu.classList.contains("open") && !menu.contains(e.target) && e.target !== btn){
+        menu.classList.remove("open");
+    }
+});
+
+// ---------------- FIREBASE ----------------
+function escutarComodo(comodo){
+    db.ref(`ambientes/${comodo}`).on("value", snap=>{
+        const d = snap.val();
+        if(!d) return;
+
+        const ledEl = document.getElementById(`led-${comodo}`);
+        const ambEl = document.getElementById(`amb-${comodo}`);
+        const lamp = document.getElementById(`lamp-${comodo}`);
+
+        if(d.led==1){
+            ledEl.innerText="LIGADA"; 
+            ledEl.className="verde"; 
+            lamp.src="./lamp_on.png";
+        } else {
+            ledEl.innerText="DESLIGADA"; 
+            ledEl.className="vermelho"; 
+            lamp.src="./lamp_off.png";
+        }
+
+        if(d.ambiente==1){
+            ambEl.innerText="ILUMINADO"; 
+            ambEl.className="verde";
+        } else {
+            ambEl.innerText="ESCURO"; 
+            ambEl.className="vermelho";
+        }
+    });
+}
+
+function escutarUltimoHistorico(comodo){
+    db.ref(`ambientes/${comodo}/historico`)
+      .limitToLast(1)
+      .on("child_added", snap=>{
+        const el = document.getElementById(`ult-${comodo}`);
+        if(el) el.innerText="Última mudança: "+snap.val(); 
+        // Certifique-se que o ESP32 envia a hora completa no histórico
+    });
+}
+
+function setLed(comodo,v){
+    db.ref(`ambientes/${comodo}/led`).set(v);
+}
+
+// ---------------- ALARME ----------------
+const alarmeSwitch = document.getElementById("alarmeSwitch");
+
+db.ref("config/alarme").on("value", snap=>{
+    alarmeSwitch.checked = snap.val() == 1;
+});
+
+alarmeSwitch.onchange = ()=>{
+    db.ref("config/alarme").set(alarmeSwitch.checked ? 1 : 0);
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Painel ESP32</title>
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: #f2f2f2;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    zoom: 1.8;
+}
+
+#titulo {
+    font-size: 36px;
+    font-weight: bold;
+    margin-top: 25px;
+    margin-bottom: 12px;
+}
+
+#ambienteTexto {
+    font-size: 35px;
+    font-weight: bold;
+    text-align: center;
+    margin: 12px 0;
+}
+
+.alerta {
+    animation: piscar 1s infinite;
+}
+@keyframes piscar {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+#historicoBox {
+    width: 312px;
+    height: 180px;
+    margin-top: 12px;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #aaa;
+    overflow-y: auto;
+    padding: 10px;
+    font-size: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: inset 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.evento {
+    text-align: center;
+    line-height: 22px;
+}
+
+.icone {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 6px;
+    transform: translateY(2px);
+}
+
+.icone.amarelo { background: #ffeb3b; }
+.icone.cinza   { background: #9e9e9e; }
+
+.texto-verde { color: #2e7d32; font-weight: bold; }
+.texto-vermelho { color: #c62828; font-weight: bold; }
+
+.separador {
+    width: 82%;
+    height: 2px;
+    background: #ccc;
+    margin: 8px auto 3px auto;
+}
+
+#limpar {
+    margin-top: 22px;
+    background: #c62828;
+    padding: 16px 36px;
+    border-radius: 14px;
+    font-size: 26px;
+    font-weight: bold;
+    color: white;
+    text-transform: uppercase;
+    box-shadow: 0 5px 0 #7a1a1a;
+}
+#limpar:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #7a1a1a;
+}
+
+svg { user-select: none; }
+.click { cursor: pointer; }
+</style>
+</head>
+
+<body>
+
+<div id="titulo"></div>
+
+<svg width="480" height="420" viewBox="16 0 400 350">
+
+<image href="quintal.png" x="12" y="-48" width="410" height="410" />
+
+<g class="click" transform="translate(25,25) scale(1.4)"
+   onclick="window.location.href='index.html'">
+    <path d="M 30 10 L 15 25 L 30 40"
+          stroke="#444" stroke-width="6" fill="none"
+          stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+
+<g id="lampada" class="click" transform="translate(175,38) scale(1.2)">
+    <svg width="70" height="70" viewBox="0 0 160 160">
+        <rect x="76" y="0" width="8" height="36" rx="3" fill="#444"/>
+        <rect x="58" y="36" width="44" height="18" rx="6" fill="#6b6b6b"/>
+        <path id="bulbo" d="M80 60
+                C110 60, 128 90, 102 118
+                C92 132, 70 132, 58 118
+                C32 90, 50 60, 80 60 Z"
+            fill="#d3d3d3" stroke="#f1d9a6" stroke-width="2"/>
+    </svg>
+</g>
+
+<g id="interruptor" class="click" transform="translate(341,200) scale(0.5)">
+    <rect x="-18" y="-28" width="36" height="58" rx="6"
+          fill="#e9e9e9" stroke="#888" stroke-width="2"/>
+    <rect x="-10" y="-10" width="20" height="20" rx="4"
+          fill="#cfcfcf" stroke="#999" stroke-width="2"/>
+</g>
+
+</svg>
+
+<div id="ambienteTexto" class="alerta"></div>
+<div id="historicoBox"></div>
+<button id="limpar">LIMPAR</button>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const comodo = params.get("nome") || "comodo";
+
+document.title = "Painel - " + comodo.toUpperCase();
+document.getElementById("titulo").innerText = comodo.toUpperCase();
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCecItsQhqKLmeLAqcWTCjNc2krXozcZOQ",
+  authDomain: "esp32-painel.firebaseapp.com",
+  databaseURL: "https://esp32-painel-default-rtdb.firebaseio.com",
+  projectId: "esp32-painel"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const ambienteTexto = document.getElementById("ambienteTexto");
+const historicoBox = document.getElementById("historicoBox");
+const bulbo = document.getElementById("bulbo");
+const interruptor = document.getElementById("interruptor");
+
+let lastLed = 0;
+let lastAmb = 1;
+
+function atualizarLampada() {
+    if (lastLed === 1) {
+        bulbo.setAttribute("fill", "#ffff99");
+        bulbo.setAttribute("stroke", "#e6c770");
+    } else {
+        bulbo.setAttribute("fill", "#d3d3d3");
+        bulbo.setAttribute("stroke", "#f1d9a6");
+    }
+
+    ambienteTexto.innerText =
+        lastAmb === 0
+        ? `⚠️ ${comodo.toUpperCase()} ESCURO ⚠️`
+        : `💡 ${comodo.toUpperCase()} ILUMINADO 💡`;
+}
+
+interruptor.onclick = () => {
+    db.ref(`ambientes/${comodo}/led`).set(lastLed === 1 ? 0 : 1);
+};
+
+db.ref(`ambientes/${comodo}/led`).on("value", snap => {
+    lastLed = Number(snap.val());
+    atualizarLampada();
+});
+
+db.ref(`ambientes/${comodo}/ambiente`).on("value", snap => {
+    lastAmb = Number(snap.val());
+    atualizarLampada();
+});
+
+/* db.ref(`ambientes/${comodo}/historico`).on("value", snap => {
+    historicoBox.innerHTML = "";
+    if (!snap.val()) return;
+
+    Object.values(snap.val()).reverse().slice(0,10).forEach(ev => {
+        let div = document.createElement("div");
+        let iluminado = ev.startsWith("ILUMINADO");
+
+        div.innerHTML = `
+            <span class="icone ${iluminado ? "amarelo" : "cinza"}"></span>
+            <span class="${iluminado ? "texto-verde" : "texto-vermelho"}">
+                ${iluminado ? "💡 ILUMINADO 💡" : "⚠️ ESCURO ⚠️"}
+            </span><br>
+            <span>${ev.split(" - ")[1] || ""}</span>
+            <div class="separador"></div>
+        `;
+        historicoBox.appendChild(div);
+    });
+});
+
+*/
+
+/* LISTA HISTÓRICO  1�71ￄ1�771ￄ1�71ￄ1�777 COM ÍCONES, CORES E LINHA */
+db.ref(`ambientes/${comodo}/historico`).on("value", snap => {
+    historicoBox.innerHTML = "";
+    if (!snap.val()) return;
+
+    Object.values(snap.val()).reverse().slice(0,10).forEach(ev => {
+
+        let div = document.createElement("div");
+        div.className = "evento";
+
+        let iluminado = ev.startsWith("ILUMINADO");
+
+        div.innerHTML = `
+            <span class="${iluminado ? "texto-verde" : "texto-vermelho"}">
+                ${iluminado ? "💡  ILUMINADO 💡" : "⚠️   ESCURO ⚠️"}
+            </span><br>
+            <span>${ev.split(" - ")[1]} - ${ev.split(" - ")[2]}</span>
+            <div class="separador"></div>
+        `;
+
+        historicoBox.appendChild(div);
+    });
+});
+
+document.getElementById("limpar").onclick = () => {
+    db.ref(`ambientes/${comodo}/historico`).remove();
+};
+</script>
+
+</body>
+</html>

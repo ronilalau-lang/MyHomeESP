@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Painel ESP32 - QUINTAL Interativo</title>
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: #f2f2f2;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    zoom: 1.8;
+}
+
+#tituloQuintal {
+    font-size: 36px;
+    font-weight: bold;
+    margin-top: 25px;
+    margin-bottom: 12px;
+}
+
+#ambienteTexto {
+    font-size: 35px;
+    font-weight: bold;
+    text-align: center;
+    margin: 12px 0;
+}
+
+.alerta {
+    animation: piscar 1s infinite;
+}
+@keyframes piscar {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+#historicoBox {
+    width: 312px;
+    height: 180px;
+    margin-top: 12px;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #aaa;
+    overflow-y: auto;
+    padding: 10px;
+    font-size: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: inset 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.evento {
+    text-align: center;
+    line-height: 22px;
+}
+
+/* 脥cones coloridos */
+.icone {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 6px;
+    transform: translateY(2px);
+}
+
+.icone.amarelo { background: #ffeb3b; }
+.icone.cinza   { background: #9e9e9e; }
+
+/* Cores do texto */
+.texto-verde { color: #2e7d32; font-weight: bold; }
+.texto-vermelho { color: #c62828; font-weight: bold; }
+
+/* Linha separadora */
+.separador {
+    width: 82%;
+    height: 2px;
+    background: #ccc;
+    margin: 8px auto 3px auto;
+}
+
+#limpar {
+    margin-top: 22px;
+    background: #c62828;
+    padding: 16px 36px;
+    border-radius: 14px;
+    font-size: 26px;
+    font-weight: bold;
+    color: white;
+    text-transform: uppercase;
+    box-shadow: 0 5px 0 #7a1a1a;
+}
+#limpar:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #7a1a1a;
+}
+
+svg { user-select: none; }
+.click { cursor: pointer; }
+
+#voltar, #voltar * {
+    -webkit-tap-highlight-color: transparent !important;
+    outline: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
+}
+</style>
+</head>
+
+<body>
+
+<div id="tituloQuintal">QUINTAL</div>
+
+<!-- ================= SVG ================= -->
+
+<svg id="quintal" width="480" height="420" viewBox="16 0 400 350">
+
+    <!-- ===== CASA ===== -->
+    <image href="quintal.png" x="12" y="-48" width="410" height="410" />
+
+<!-- ===== 脥CONE VOLTAR ===== -->
+<g id="voltar" class="click" transform="translate(25,25) scale(1.4)"
+   role="button" tabindex="0"
+   onclick="window.location.href='index.html'"
+   onkeydown="if(event.key==='Enter' || event.key===' ') window.location.href='index.html';"
+   style="cursor:pointer;">
+    <rect x="-15" y="-15" width="70" height="70" fill="transparent"/>
+    <svg width="40" height="40" viewBox="0 0 50 50">
+        <path d="M 30 10 L 15 25 L 30 40"
+              stroke="#444" stroke-width="6" fill="none"
+              stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+</g>
+
+    <!-- ===== CERCA ===== -->
+    <g id="cerca" transform="translate(45.6,250)">
+        <rect x="0" y="20" width="50" height="10" fill="#c49a6c" stroke="#8b6a47" stroke-width="2"/>
+        <rect x="0" y="45" width="50" height="10" fill="#c49a6c" stroke="#8b6a47" stroke-width="2"/>
+        
+        <rect x="160" y="20" width="180" height="10" fill="#c49a6c" stroke="#8b6a47" stroke-width="2"/>
+        <rect x="160" y="45" width="180" height="10" fill="#c49a6c" stroke="#8b6a47" stroke-width="2"/>
+
+        <g fill="#d7b284" stroke="#8b6a47" stroke-width="2">
+            <rect x="0"   y="0" width="18" height="75"/>
+            <rect x="36"  y="0" width="18" height="75"/>
+            
+            <rect x="144" y="0" width="18" height="75"/>
+            <rect x="180" y="0" width="18" height="75"/>
+            <rect x="216" y="0" width="18" height="75"/>
+            <rect x="252" y="0" width="18" height="75"/>
+            <rect x="288" y="0" width="18" height="75"/>
+            <rect x="324" y="0" width="18" height="75"/>
+        </g>
+    </g>
+
+<!-- ========= PORT脙O ========= -->
+<g id="portao" transform="translate(100,323) scale(1,-1)">
+    <polygon points="1,45 87,20 87,32 1,57"
+        fill="#c49a6c" stroke="#8b6a47" stroke-width="2"/>
+    <g fill="#c49a6c" stroke="#8b6a47" stroke-width="2">
+        <rect x="1"  y="20" width="87" height="10" />
+        <rect x="1"  y="45" width="87" height="10" />
+    </g>
+    <g fill="#d7b284" stroke="#8b6a47" stroke-width="2">
+        <path d="M0 0 L18 0 L18 60 L9 75 L0 60 Z" />
+        <path d="M36 0 L54 0 L54 60 L45 75 L36 60 Z" />
+        <path d="M72 0 L90 0 L90 60 L81 75 L72 60 Z" />
+    </g>
+</g>
+
+    <!-- ===== L脗MPADA ===== -->
+    <g id="lampada" class="click" transform="translate(175,38) scale(1.2)">
+        <svg width="70" height="70" viewBox="0 0 160 160">
+            <rect x="76" y="0" width="8" height="36" rx="3" fill="#444"/>
+            <rect x="58" y="36" width="44" height="18" rx="6" fill="#6b6b6b"/>
+            <path id="bulbo" d="M80 60
+                    C110 60, 128 90, 102 118
+                    C92 132, 70 132, 58 118
+                    C32 90, 50 60, 80 60 Z"
+                fill="#d3d3d3" stroke="#f1d9a6" stroke-width="2"/>
+            <ellipse cx="80" cy="74" rx="36" ry="28" fill="transparent"/>
+        </svg>
+    </g>
+
+    <!-- ===== INTERRUPTOR ===== -->
+    <g id="interruptor" class="click" transform="translate(341,200) scale(0.5)">
+        <rect x="-18" y="-28" width="36" height="58" rx="6"
+              fill="#e9e9e9" stroke="#888" stroke-width="2"/>
+        <rect id="botao" x="-10" y="-10" width="20" height="20" rx="4"
+              fill="#cfcfcf" stroke="#999" stroke-width="2"/>
+    </g>
+
+</svg>
+
+<div id="ambienteTexto" class="alerta"></div>
+<div id="historicoBox"></div>
+<button id="limpar">LIMPAR</button>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+<script>
+/* ===================== FIREBASE ===================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyCecItsQhqKLmeLAqcWTCjNc2krXozcZOQ",
+  authDomain: "esp32-painel.firebaseapp.com",
+  databaseURL: "https://esp32-painel-default-rtdb.firebaseio.com",
+  projectId: "esp32-painel",
+  storageBucket: "esp32-painel.firebasestorage.app",
+  messagingSenderId: "342570842370",
+  appId: "1:342570842370:web:73b122004cff88a901aa1b"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ELEMENTOS */
+const ambienteTexto = document.getElementById("ambienteTexto");
+const historicoBox = document.getElementById("historicoBox");
+const bulbo = document.getElementById("bulbo");
+const interruptor = document.getElementById("interruptor");
+
+/* VARI脕VEIS */
+let lastLed = 0;
+let lastAmb = 1;
+let prevAmb = 1;
+let ambInitialized = false;
+
+/* FUN脟脙O L脗MPADA */
+function atualizarLampada() {
+    if (lastLed === 1) {
+        bulbo.setAttribute("fill", "#ffff99");
+        bulbo.setAttribute("stroke", "#e6c770");
+    } else {
+        bulbo.setAttribute("fill", "#d3d3d3");
+        bulbo.setAttribute("stroke", "#f1d9a6");
+    }
+
+    ambienteTexto.innerText =
+        lastAmb === 0 ? "鈿狅笍 QUINTAL ESCURO 鈿狅笍" : "馃挕  QUINTAL ILUMINADO 馃挕";
+}
+
+/* CLICK INTERRUPTOR */
+interruptor.onclick = () => {
+    db.ref("ambientes/quintal/led").set(lastLed === 1 ? 0 : 1);
+};
+
+
+/* LISTENERS */
+db.ref("ambientes/quintal/led").on("value", snap => {
+    lastLed = Number(snap.val());
+    atualizarLampada();
+});
+
+db.ref("ambientes/quintal/ambiente").on("value", snap => {
+    const newAmb = Number(snap.val());
+
+    if (!ambInitialized) {
+        lastAmb = newAmb;
+        ambInitialized = true;
+        atualizarLampada();
+        return;
+    }
+
+});
+
+/* LISTA HIST脫RICO 鈥�1锟�71锟�1锟�77 COM 脥CONES, CORES E LINHA */
+db.ref("ambientes/quintal/historico").on("value", snap => {
+    historicoBox.innerHTML = "";
+    if (!snap.val()) return;
+
+    Object.values(snap.val()).reverse().slice(0,10).forEach(ev => {
+
+        let div = document.createElement("div");
+        div.className = "evento";
+
+        let iluminado = ev.startsWith("ILUMINADO");
+
+        div.innerHTML = `
+            <span class="icone ${iluminado ? "amarelo" : "cinza"}"></span>
+            <span class="${iluminado ? "texto-verde" : "texto-vermelho"}">
+                ${iluminado ? "馃挕 QUINTAL ILUMINADO 馃挕" : "鈿狅笍  QUINTAL ESCURO 鈿狅笍"}
+            </span><br>
+            <span>${ev.split(" - ")[1]} - ${ev.split(" - ")[2]}</span>
+            <div class="separador"></div>
+        `;
+
+        historicoBox.appendChild(div);
+    });
+});
+
+/* BOT脙O LIMPAR */
+document.getElementById("limpar").onclick = () => {
+    db.ref("ambientes/quintal/historico").remove();
+};
+</script>
+
+</body>
+</html>
