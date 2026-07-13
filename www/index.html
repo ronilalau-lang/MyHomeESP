@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard ESP32</title>
 <style>
 body {
@@ -24,15 +24,15 @@ h1 {
 
 #dashboard {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 24px;
-    padding: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+    gap: 12px;
+    padding: 12px;
 }
 
 .card {
     background: rgba(255,255,255,0.75);
     border-radius: 18px;
-    padding: 18px;
+    padding: 10px;
     box-shadow: 6px 6px 20px rgba(0,0,0,0.35);
     position: relative;
     cursor: pointer;
@@ -40,8 +40,8 @@ h1 {
     /* ===== remove sele莽茫o azul ===== */
     user-select: none;                  /* n茫o seleciona texto */
     -webkit-tap-highlight-color: transparent; /* no mobile */
-    min-height: 280px;   /* fixa altura m铆nima */
-    max-height: 280px;   /* fixa altura m谩xima igual para todos os cards */
+    min-height: 210px;   /* fixa altura m铆nima */
+    max-height: 210px;   /* fixa altura m谩xima igual para todos os cards */
     display: flex;
     flex-direction: column;
     justify-content: space-between; /* mant茅m bot玫es embaixo */
@@ -65,12 +65,12 @@ h1 {
 .lampada {
     position: absolute;
     top: 40px;
-    right: 340px;
-    width: 70px;
+    right: 18px;
+    width: 48px;
 }
 
 .status {
-    font-size: 30px;
+    font-size: clamp(16px,2vw,22px);
     margin: 6px 0;
 }
 
@@ -78,7 +78,7 @@ h1 {
 .vermelho { color: #c62828; font-weight: bold; }
 
 .ultima {
-    font-size: 24px;
+    font-size: clamp(14px,1.8vw,18px);
     margin-top: 8px;
     text-align: center;
     color: #000000;
@@ -93,7 +93,7 @@ h1 {
 button {
     flex: 1;
     padding: 12px;
-    font-size: 32px;
+    font-size: clamp(16px,2.2vw,22px);
     border: none;
     border-radius: 12px;
     cursor: pointer;
@@ -106,7 +106,7 @@ button {
     position: fixed;
     top: 15px;
     left: 15px;
-    font-size: 34px;
+    font-size: clamp(20px,3vw,28px);
     background: rgba(255,255,255,0.9);
     border-radius: 10px;
     padding: 6px 12px;
@@ -118,7 +118,7 @@ button {
     position: fixed;
     top: 0;
     left: 0;
-    width: 450px;
+    width: min(90vw,360px);
     height: 100%;
     background: rgba(0,0,0,0.95); /* menu preto */
     box-shadow: 4px 0 15px rgba(0,0,0,.3);
@@ -130,7 +130,7 @@ button {
 }
 
 .menu h2 {
-    font-size: 50px;
+    font-size: clamp(24px,4vw,36px);
     text-align: center;
     margin-bottom: 40px;
     color: white;
@@ -144,7 +144,7 @@ button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 40px;
+    font-size: clamp(18px,2.8vw,28px);
     margin-top: 30px;
     cursor: pointer;
     white-space: nowrap;
@@ -216,6 +216,12 @@ input:checked + .slider:before {
 .remover-card:hover {
     background: #a61f1f;
 }
+@media (max-width:700px){
+#dashboard{grid-template-columns:repeat(2,minmax(150px,1fr));gap:10px;padding:10px;}
+.card{min-height:190px;max-height:190px;padding:8px;}
+.card h2{font-size:20px;}
+}
+
 </style>
 </head>
 
